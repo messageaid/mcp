@@ -1,0 +1,19 @@
+networks:
+  everything:
+
+services:
+  # guest : guest
+  rabbitmq:
+    image: rabbitmq:4.1-management
+    ports:
+      - "5672:5672"
+      - "15672:15672"
+      - "15692:15692"
+    volumes:
+      - rmq-data:/var/lib/rabbitmq
+    networks:
+      - "everything"
+    environment:
+      - RABBITMQ_ERLANG_COOKIE=COOKIE
+volumes:
+  rmq-data:
