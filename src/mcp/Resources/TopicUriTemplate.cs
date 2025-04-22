@@ -3,9 +3,9 @@ namespace mcp;
 using Corvus.UriTemplates;
 using Corvus.UriTemplates.TavisApi;
 
-public static class QueueUriTemplate
+public class TopicUriTemplate
 {
-    static QueueUriTemplate()
+    static TopicUriTemplate()
     {
         Parser = UriTemplateParserFactory.CreateParser(Template);
     }
@@ -15,17 +15,17 @@ public static class QueueUriTemplate
         get;
     }
     
-    public static readonly string Template = "rabbitmq://{hostname}/queues/{name}";
+    public static readonly string Template = "rabbitmq://{hostname}/topics/{name}";
     public static readonly UriTemplate Template2 = new(Template);
-
+    
     public static bool IsMatch(string? input) => Parser.IsMatch(input);
-
+    
     public static string Create(string hostname, string name)
     {
-        return $"rabbitmq://{hostname}/queues/{name}";
+        return $"rabbitmq://{hostname}/topics/{name}";
     }
 
-    public static QueueUri? Parse(string? input)
+    public static TopicUri? Parse(string? input)
     {
         if (input == null) return null;
         if (!Parser.IsMatch(input)) return null;
@@ -36,8 +36,8 @@ public static class QueueUriTemplate
         if (!dict.TryGetValue("name", out var value)) return null;
         
         var str = value.ToString()!;
-        return new QueueUri(str, input);
+        return new TopicUri(str, input);
     }
 }
 
-public record QueueUri(string Name, string Uri);
+public record TopicUri(string Name, string Uri);

@@ -2,38 +2,35 @@ namespace mcp;
 
 using System.Text;
 
-public static class PaginationCursor
+public record PaginationCursor(ResourceTypes ResourceType, string? LastName, int PerPage)
 {
-    public static string FirstCursor()
+    public const int DefaultPerPage = 25;
+    
+    public static PaginationCursor Extract(string? cursor)
     {
-        return Encode(1, 20);
-    }
-
-    public static string NextCursor(string cursor)
-    {
-        var (page, perPage) = Decode(cursor);
-        return Encode(page + 1, perPage);
-    }
-
-    public static (int, int) Extract(string? cursor)
-    {
-        if (cursor == null) return (1, 20);
+        if (cursor == null) return new(ResourceTypes.Queue, "", DefaultPerPage);
         
         return Decode(cursor);
     }
 
-    public static string Encode(int page, int perPage)
+    public static string Encode(ResourceTypes resourceType, string? lastName, int perPage)
     {
-        var str = $"{page}:{perPage}";
+        lastName ??= "";
+        
+        var str = $"{resourceType}:{lastName}:{perPage}";
         var bytes = Encoding.UTF8.GetBytes(str);
         return Convert.ToBase64String(bytes);
     }
     
-    static (int, int) Decode(string cursor)
+    static PaginationCursor Decode(string cursor)
     {
         var bytes = Convert.FromBase64String(cursor);
         var str = Encoding.UTF8.GetString(bytes);
         var parts = str.Split(":");
-        return (int.Parse(parts[0]), int.Parse(parts[1]));
+
+        var t = Enum.Parse<ResourceTypes>(parts[0]);
+        var ln = parts[1];
+        var pp = int.Parse(parts[2]);
+        return new PaginationCursor(t, ln, pp);
     }
 }

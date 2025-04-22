@@ -19,6 +19,7 @@ builder.Services.AddSerilog(cfg =>
     // STDIO ISSUE
     // Configure all logs to go to stderr
     cfg.WriteTo.Console(standardErrorFromLevel: LogEventLevel.Verbose);
+    cfg.WriteTo.File("logs.txt");
 });
 
 builder.Services.AddOptions<McpOptions>()
@@ -53,6 +54,8 @@ builder.Services.AddOptions<McpOptions>()
     .ValidateOnStart();
 
 builder.Services.AddHttpClient<RabbitMqManagementClient>();
+builder.Services.AddHostedService<RabbitMqCacheBackgroundJob>();
+builder.Services.AddSingleton<RabbitMqItemCache>();
 
 builder.Services
     .AddMcpServer(o =>

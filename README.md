@@ -3,13 +3,27 @@
 This is the [Message Aid MCP server](https://messageaid.com/docs/reference/mcp). The goal is to support the three main brokers 
 of Message Aid, RabbitMQ, Azure Service Bus, and SQS.
 
+## Resources
+
+| Resource      | Rabbit MQ | Azure Service Bus | SQS     |
+|---------------|-----------|-------------------|---------|
+| Queues        | ✅         | Planned           | Planned |
+| Topics        | ✅         | Planned           | Planned |
+| Subscriptions | Planned   | Planned           | Planned |
+
+## Tools
+
 | Action      | Rabbit MQ | Azure Service Bus | SQS     |
 |-------------|-----------|-------------------|---------|
-| List Queues | Y         | Planned           | Planned |
-| Purge Queue | Y         | Planned           | Planned | 
+| Purge Queue | ✅         | Planned           | Planned | 
 
 
 ## Usage
+
+| Transport  | ...                                                                                             |
+|------------|-------------------------------------------------------------------------------------------------|
+| STDIO      | ✅                                                                                               |
+| Streamable | [Planned](https://github.com/modelcontextprotocol/csharp-sdk/issues/157) (based on SDK Support) |
 
 ### Via Docker
 
@@ -39,14 +53,16 @@ docker run -i --rm \
 
 ## Configuration
 
-| Env Var    | ...            |
-|------------|----------------|
-| BROKER_URL |                |
-| MCP_MODE   | ReadOnly       | 
-|            | MessageAllowed | 
-|            | BrokerAllowed  | 
+| Env Var    | ...                                    |
+|------------|----------------------------------------|
+| BROKER_URL | The broker to connect to in URL format |
+| MCP_MODE   | ReadOnly                               | 
+|            | MessageAllowed                         | 
+|            | BrokerAllowed                          | 
 
 ## Building
+
+Built using dotnet and the [MCP C# SDK](https://github.com/modelcontextprotocol/csharp-sdk)
 
 ```sh
 docker build -t ghcr.io/messageaid/mcp -f Dockerfile .

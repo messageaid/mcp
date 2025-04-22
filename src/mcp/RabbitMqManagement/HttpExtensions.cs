@@ -18,12 +18,10 @@ public static class HttpExtensions
     /// <summary>
     /// A simple get
     /// </summary>
-    public static async Task<T?> SimpleGet<T>(this HttpClient http, string path, RabbitPagination pagination, CancellationToken ct = default)
+    public static async Task<T?> SimpleGet<T>(this HttpClient http, string path, CancellationToken ct = default)
         where T : class
     {
-        var uri = QueryHelpers.AddQueryString(path, pagination.ToQueryString());
-
-        var msg = new HttpRequestMessage(HttpMethod.Get, uri);
+        var msg = new HttpRequestMessage(HttpMethod.Get, path);
 
 
         var response = await http.SendAsync(msg, ct);

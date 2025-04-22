@@ -7,7 +7,7 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "mcp", "src\mcp\mcp.csproj",
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "mcp.test", "src\mcp.test\mcp.test.csproj", "{FBA77CAF-03AA-454E-BBF8-2070FE198D31}"
 EndProject
-Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "dots", "dots", "{18C42DBA-2276-44C8-AD65-CD341A724362}"
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "project items", "project items", "{18C42DBA-2276-44C8-AD65-CD341A724362}"
 	ProjectSection(SolutionItems) = preProject
 		README.md = README.md
 		docker-compose.yml = docker-compose.yml

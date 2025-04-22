@@ -6,6 +6,8 @@ using ModelContextProtocol.Server;
 
 namespace mcp;
 
+using ModelContextProtocol;
+
 public static class ResourceRouter
 {
     public static async ValueTask<ReadResourceResult> ReadResource(
@@ -19,29 +21,45 @@ public static class ResourceRouter
 
         var contents = new List<ResourceContents>();
 
-        var qu = QueueUriTemplate.Parse(context.Params?.Uri);
-        
-        if (qu != null)
+        if (QueueUriTemplate.Parse(context.Params?.Uri) is { } qu)
         {
             var q = await client.GetQueue(qu.Name, ct);
             if (q != null)
             {
                 var str = JsonSerializer.Serialize(q);
-                    
+
                 contents.Add(new TextResourceContents()
                 {
                     MimeType = "application/json",
                     Uri = qu.Uri,
                     Text = str
                 });
-            }    
+            }
         }
-        
-        
+
+        if (TopicUriTemplate.Parse(context.Params?.Uri) is { } tu)
+        {
+            var t = await client.GetExchange(tu.Name, ct);
+            if (t != null)
+            {
+                var str = JsonSerializer.Serialize(t);
+
+                contents.Add(new TextResourceContents()
+                {
+                    MimeType = "application/json",
+                    Uri = tu.Uri,
+                    Text = str
+                });
+            }
+        }
+
         // 404?
+        if(contents.Count == 0)
+            throw new McpException("Resource not found", -32002);
+
         return new ReadResourceResult()
         {
-            Contents = contents
+            Contents = contents,
         };
     }
 
@@ -49,26 +67,29 @@ public static class ResourceRouter
         RequestContext<ListResourcesRequestParams> context,
         CancellationToken ct = default)
     {
-        var (page, perPage) = PaginationCursor.Extract(context.Params?.Cursor);
-        
+        await Task.Yield();
         var logger = context.GetLogger();
-        logger.LogInformation("List Resources");
-
-        var client = context.Services!.GetRequiredService<RabbitMqManagementClient>();
-
+        logger.LogInformation("ListResources");
+        
+        var cursor = PaginationCursor.Extract(context.Params?.Cursor);
+        logger.LogInformation("GotCursor");
+        
+        var cache = context.Services!.GetRequiredService<RabbitMqItemCache>();
+        logger.LogInformation("GotCache");
+        
         var resources = new List<Resource>();
 
-        await foreach (var q in client.Queues(page, perPage, ct))
+        var (items, nextCursor) = cache.NextPage(cursor);
+        foreach (var item in items)
         {
             resources.Add(new Resource
             {
-                Name = q.Name,
-                Uri = $"rabbitmq://localhost/queues/{q.Name}"
+                Name = item.Name,
+                Uri = item.ToUri()
             });
         }
-
-        var nextCursor = PaginationCursor.Encode(page + 1, perPage);
-        if (resources.Count < perPage)
+        
+        if (resources.Count < cursor.PerPage)
             nextCursor = null;
         
         return new ListResourcesResult
@@ -82,11 +103,8 @@ public static class ResourceRouter
         RequestContext<ListResourceTemplatesRequestParams> context,
         CancellationToken ct = default)
     {
-        var logger = context.GetLogger();
-        logger.LogInformation("List Resource Templates");
-        
         await Task.Yield();
-
+        
         return new ListResourceTemplatesResult
         {
             ResourceTemplates = [
@@ -95,6 +113,13 @@ public static class ResourceRouter
                     Name = "A Queue",
                     UriTemplate = QueueUriTemplate.Template,
                     Description = "Get Queue By Name",
+                    MimeType = "application/json"
+                },
+                new ResourceTemplate
+                {
+                    Name = "A Topic",
+                    UriTemplate = TopicUriTemplate.Template,
+                    Description = "Get Topic By Name",
                     MimeType = "application/json"
                 }
             ]

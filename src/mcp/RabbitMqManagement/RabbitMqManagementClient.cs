@@ -4,6 +4,7 @@ using System.Net.Http.Headers;
 using System.Runtime.CompilerServices;
 using System.Text;
 using System.Text.Json;
+using Microsoft.AspNetCore.WebUtilities;
 using Microsoft.Extensions.Options;
 
 public class RabbitMqManagementClient
@@ -58,7 +59,8 @@ public class RabbitMqManagementClient
     /// </summary>
     public async IAsyncEnumerable<RabbitMqHttpQueue> Queues(RabbitPagination pagination, [EnumeratorCancellation] CancellationToken ct = default)
     {
-        var page = await _http.SimpleGet<RabbitMqHttpPaginationResponse<RabbitMqHttpQueue>>($"/api/queues/{_urlVirtualHost}", pagination, ct: ct);
+        var uri = QueryHelpers.AddQueryString($"/api/queues/{_urlVirtualHost}", pagination.ToQueryString());
+        var page = await _http.SimpleGet<RabbitMqHttpPaginationResponse<RabbitMqHttpQueue>>(uri, ct);
 
         if (page == null)
             yield break;
@@ -86,7 +88,8 @@ public class RabbitMqManagementClient
             if (page.Page >= page.PageCount)
                 yield break;
 
-            page = await _http.SimpleGet<RabbitMqHttpPaginationResponse<RabbitMqHttpQueue>>($"/api/queues/{_urlVirtualHost}", pagination, ct: ct);
+            uri = QueryHelpers.AddQueryString($"/api/queues/{_urlVirtualHost}", pagination.ToQueryString());
+            page = await _http.SimpleGet<RabbitMqHttpPaginationResponse<RabbitMqHttpQueue>>(uri, ct);
             if (page == null)
                 yield break;
         }
@@ -109,6 +112,66 @@ public class RabbitMqManagementClient
     {
         // /api/queues/vhost/name/contents
         await _http.SimpleDelete($"/api/queues/{vhost}/{name}/contents");
+    }
+    
+    /// <summary>
+    /// get exchanges
+    /// </summary>
+    public IAsyncEnumerable<RabbitMqHttpExchange> Exchanges(CancellationToken ct = default)
+    {
+        return Exchanges(RabbitPagination.Default(), ct);
+    }
+    
+    /// <summary>
+    /// get exchanges
+    /// </summary>
+    public IAsyncEnumerable<RabbitMqHttpExchange> Exchanges(int page, int perPage, CancellationToken ct = default)
+    {
+        return Exchanges(new RabbitPagination
+        {
+            Page = page,
+            PageSize = perPage,
+        }, ct);
+    }
+    
+    /// <summary>
+    /// get exchanges
+    /// </summary>
+    public async IAsyncEnumerable<RabbitMqHttpExchange> Exchanges(RabbitPagination pagination, [EnumeratorCancellation] CancellationToken ct = default)
+    {
+        var uri = QueryHelpers.AddQueryString($"/api/exchanges/{_urlVirtualHost}", pagination.ToQueryString());
+        var page = await _http.SimpleGet<RabbitMqHttpPaginationResponse<RabbitMqHttpExchange>>(uri, ct);
+
+        if (page == null)
+            yield break;
+
+        while (page.Page <= page.PageCount)
+        {
+            var exchanges = page.Items;
+
+            foreach (var exchange in exchanges)
+            {
+                yield return exchange;
+            }
+
+            pagination.Page += 1;
+
+            if (page.Page >= page.PageCount)
+                yield break;
+
+            uri = QueryHelpers.AddQueryString($"/api/exchanges/{_urlVirtualHost}", pagination.ToQueryString());
+            page = await _http.SimpleGet<RabbitMqHttpPaginationResponse<RabbitMqHttpExchange>>(uri, ct);
+            if (page == null)
+                yield break;
+        }
+    }
+    
+    /// <summary>
+    /// Get an exchange
+    /// </summary>
+    public async Task<RabbitMqHttpExchange?> GetExchange(string name, CancellationToken ct = default)
+    {
+        return await _http.SimpleGet<RabbitMqHttpExchange>($"/api/exchanges/{_urlVirtualHost}/{name}", ct);
     }
 }
 
