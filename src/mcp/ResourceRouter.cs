@@ -80,7 +80,7 @@ public static class ResourceRouter
 
         // 404?
         if(contents.Count == 0)
-            throw new McpException("Resource not found", -32002);
+            throw new McpException("Resource not found", McpErrorCode.InternalError);
 
         return new ReadResourceResult()
         {
