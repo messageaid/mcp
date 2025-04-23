@@ -3,9 +3,9 @@ namespace mcp.Resources;
 using Corvus.UriTemplates;
 using Corvus.UriTemplates.TavisApi;
 
-public class TopicUriTemplate
+public class SubscriptionUriTemplate
 {
-    static TopicUriTemplate()
+    static SubscriptionUriTemplate()
     {
         Parser = UriTemplateParserFactory.CreateParser(Template);
     }
@@ -15,17 +15,17 @@ public class TopicUriTemplate
         get;
     }
     
-    public static readonly string Template = "rabbitmq://{hostname}/topics/{name}";
+    public static readonly string Template = "rabbitmq://{hostname}/subscriptions/{name}";
     public static readonly UriTemplate Template2 = new(Template);
     
     public static bool IsMatch(string? input) => Parser.IsMatch(input);
     
     public static string Create(string hostname, string name)
     {
-        return $"rabbitmq://{hostname}/topics/{name}";
+        return $"rabbitmq://{hostname}/subscriptions/{name}";
     }
 
-    public static TopicUri? Parse(string? input)
+    public static SubscriptionUri? Parse(string? input)
     {
         if (input == null) return null;
         if (!Parser.IsMatch(input)) return null;
@@ -36,8 +36,8 @@ public class TopicUriTemplate
         if (!dict.TryGetValue("name", out var value)) return null;
         
         var str = value.ToString()!;
-        return new TopicUri(str, input);
+        return new SubscriptionUri(str, input);
     }
 }
 
-public record TopicUri(string Name, string Uri);
+public record SubscriptionUri(string Name, string Uri);

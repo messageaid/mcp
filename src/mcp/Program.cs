@@ -1,4 +1,5 @@
 using mcp;
+using mcp.Brokers;
 using mcp.RabbitMqManagement;
 using ModelContextProtocol.Protocol.Types;
 using Serilog;

@@ -1,4 +1,6 @@
-namespace mcp;
+namespace mcp.Brokers;
+
+using mcp.Resources;
 
 public class RabbitMqItemCache(ILogger<RabbitMqItemCache> logger)
 {
@@ -20,7 +22,12 @@ public class RabbitMqItemCache(ILogger<RabbitMqItemCache> logger)
 
         if (cursor.ResourceType == ResourceTypes.Topic)
         {
-            query = query.Where(x => x.Key.ResourceType == ResourceTypes.Topic);
+            query = query.Where(x => x.Key.ResourceType == ResourceTypes.Topic || x.Key.ResourceType == ResourceTypes.Subscription);
+        }
+
+        if (cursor.ResourceType == ResourceTypes.Subscription)
+        {
+            query = query.Where(x => x.Key.ResourceType == ResourceTypes.Subscription);
         }
         
         if (!string.IsNullOrEmpty(cursor.LastName))
@@ -48,19 +55,11 @@ public record PagedSet(List<RabbitMqItem> Items, string Cursor);
 public record RabbitMqItem(ResourceTypes ResourceType, string Name, Uri Uri)
     : IComparable<RabbitMqItem>
 {
-    public string ToUri()
-    {
-        if (ResourceType == ResourceTypes.Queue)
-            return QueueUriTemplate.Create(Uri.Host, Name);
-
-        return TopicUriTemplate.Create(Uri.Host, Name);
-    }
-
     public int CompareTo(RabbitMqItem? other)
     {
         if (other == null) return 1;
         
-        // First compare by ResourceType (Queue = 0, Topic = 1)
+        // First compare by ResourceType (Queue = 0, Topic = 1, Subscription = 2)
         int typeComparison = ResourceType.CompareTo(other.ResourceType);
         if (typeComparison != 0)
             return typeComparison;

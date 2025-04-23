@@ -173,7 +173,37 @@ public class RabbitMqManagementClient
     {
         return await _http.SimpleGet<RabbitMqHttpExchange>($"/api/exchanges/{_urlVirtualHost}/{name}", ct);
     }
+    
+    /// <summary>
+    /// get subscriptions
+    /// </summary>
+    public async IAsyncEnumerable<RabbitMqHttpBinding> Bindings([EnumeratorCancellation] CancellationToken ct = default)
+    {
+        var bindings = await _http.SimpleGet<List<RabbitMqHttpBinding>>($"/api/bindings/{_urlVirtualHost}", ct);
+
+        if (bindings == null)
+            yield break;
+
+        foreach (var binding in bindings)
+        {
+            yield return binding;
+        }
+    }
+    
+    /// <summary>
+    /// Get a subscription
+    /// </summary>
+    public async Task<RabbitMqHttpExchange?> GetBinding(string source, string destinationType, string destinationName, string propKey, CancellationToken ct = default)
+    {
+        var uri = $"/api/bindings/{_urlVirtualHost}/e/{source}/e/{destinationName}/{propKey}";
+        if(destinationType == "queue")
+            uri = $"/api/bindings/{_urlVirtualHost}/e/{source}/q/{destinationName}/{propKey}";
+        
+        return await _http.SimpleGet<RabbitMqHttpExchange>(uri, ct);
+    }
 }
+
+
 
 public class BoxCarCaseNamingPolicy : JsonNamingPolicy
 {

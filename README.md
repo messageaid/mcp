@@ -11,6 +11,17 @@ of Message Aid, RabbitMQ, Azure Service Bus, and SQS.
 | Topics        | ✅         | Planned           | Planned |
 | Subscriptions | Planned   | Planned           | Planned |
 
+A `broker` is in rabbitmq speak a HOST + VHOST
+
+- Queue: `rabbitmq://broker/queues/name`
+- Topic: `rabbitmq://broker/topics/name`
+  - An Exchange in RabbitMQ
+- Subscription: `rabbitmq://broker/subscription/base64(source, destinationType, destinationName, propertiesKey)`
+  - A Binding in RabbitMQ
+
+- `azure://broker/name`
+- `sqs://localhost/vhost/name`
+
 ## Tools
 
 | Action      | Rabbit MQ | Azure Service Bus | SQS     |
@@ -67,6 +78,8 @@ Built using dotnet and the [MCP C# SDK](https://github.com/modelcontextprotocol/
 ```sh
 docker build -t ghcr.io/messageaid/mcp -f Dockerfile .
 ```
+
+
 
 ## Licence
 

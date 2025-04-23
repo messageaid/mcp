@@ -1,6 +1,7 @@
-namespace mcp;
+namespace mcp.Brokers;
 
 using mcp.RabbitMqManagement;
+using mcp.Resources;
 using Microsoft.Extensions.Options;
 
 public class RabbitMqCacheBackgroundJob(
@@ -11,11 +12,11 @@ public class RabbitMqCacheBackgroundJob(
     protected override async Task ExecuteAsync(CancellationToken stoppingToken)
     {
         using var scope = provider.CreateScope();
+        // TODO: Eventually support multiple HOSTs (aka brokers)
         var client = scope.ServiceProvider.GetRequiredService<RabbitMqManagementClient>();
         var cache = scope.ServiceProvider.GetRequiredService<RabbitMqItemCache>();
         var opt = scope.ServiceProvider.GetRequiredService<IOptions<McpOptions>>();
-
-        logger.LogInformation("BG JOB");
+        
         try
         {
             await foreach (var queue in client.Queues(stoppingToken))
@@ -36,6 +37,21 @@ public class RabbitMqCacheBackgroundJob(
             {
                 var u = new Uri(TopicUriTemplate.Create(opt.Value.Hostname(), exchange.Name));
                 cache.Ensure(ResourceTypes.Topic, exchange.Name, u);
+            }
+        }
+        catch (Exception ex)
+        {
+            logger.LogError(ex, "Error Listing Topics");
+        }
+        
+        try
+        {
+            await foreach (var binding in client.Bindings(stoppingToken))
+            {
+                var name = RabbitMqSubscriptionParts.BindingName(binding);
+                var key = RabbitMqSubscriptionParts.EncodeRabbitMqParts(binding);
+                var u = new Uri(SubscriptionUriTemplate.Create(opt.Value.Hostname(), key));
+                cache.Ensure(ResourceTypes.Subscription, name, u);
             }
         }
         catch (Exception ex)

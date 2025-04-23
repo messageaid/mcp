@@ -1,12 +1,12 @@
-using System.Text.Json;
-using Corvus.UriTemplates;
-using mcp.RabbitMqManagement;
-using ModelContextProtocol.Protocol.Types;
-using ModelContextProtocol.Server;
-
 namespace mcp;
 
+using System.Text.Json;
+using mcp.Brokers;
+using mcp.RabbitMqManagement;
+using mcp.Resources;
 using ModelContextProtocol;
+using ModelContextProtocol.Protocol.Types;
+using ModelContextProtocol.Server;
 
 public static class ResourceRouter
 {
@@ -15,7 +15,6 @@ public static class ResourceRouter
         CancellationToken ct = default)
     {
         var logger = context.GetLogger();
-        logger.LogInformation("Read Resource");
         
         var client = context.Services!.GetRequiredService<RabbitMqManagementClient>();
 
@@ -23,6 +22,8 @@ public static class ResourceRouter
 
         if (QueueUriTemplate.Parse(context.Params?.Uri) is { } qu)
         {
+            logger.LogInformation("Read Resource - Queue - {Uri}", context.Params?.Uri);
+            
             var q = await client.GetQueue(qu.Name, ct);
             if (q != null)
             {
@@ -39,6 +40,8 @@ public static class ResourceRouter
 
         if (TopicUriTemplate.Parse(context.Params?.Uri) is { } tu)
         {
+            logger.LogInformation("Read Resource - Topic - {Uri}", context.Params?.Uri);
+            
             var t = await client.GetExchange(tu.Name, ct);
             if (t != null)
             {
@@ -48,6 +51,28 @@ public static class ResourceRouter
                 {
                     MimeType = "application/json",
                     Uri = tu.Uri,
+                    Text = str
+                });
+            }
+        }
+        
+        if (SubscriptionUriTemplate.Parse(context.Params?.Uri) is { } su)
+        {
+            logger.LogInformation("Read Resource - Binding - {Uri}", context.Params?.Uri);
+            
+            var parts = RabbitMqSubscriptionParts.DecodeRabbitMqParts(su.Name);
+            var ex = await client.GetBinding(parts.Source,
+                parts.DestinationType,
+                parts.Destination,
+                parts.PropertiesKey, ct);
+            if (ex != null)
+            {
+                var str = JsonSerializer.Serialize(ex);
+
+                contents.Add(new TextResourceContents()
+                {
+                    MimeType = "application/json",
+                    Uri = su.Uri,
                     Text = str
                 });
             }
@@ -68,14 +93,9 @@ public static class ResourceRouter
         CancellationToken ct = default)
     {
         await Task.Yield();
-        var logger = context.GetLogger();
-        logger.LogInformation("ListResources");
         
         var cursor = PaginationCursor.Extract(context.Params?.Cursor);
-        logger.LogInformation("GotCursor");
-        
         var cache = context.Services!.GetRequiredService<RabbitMqItemCache>();
-        logger.LogInformation("GotCache");
         
         var resources = new List<Resource>();
 
@@ -85,7 +105,7 @@ public static class ResourceRouter
             resources.Add(new Resource
             {
                 Name = item.Name,
-                Uri = item.ToUri()
+                Uri = item.Uri.ToString()
             });
         }
         
